@@ -1,0 +1,24 @@
+import pandas
+import numpy as np
+
+def makeArtificialDF(numGridPoints,lowWavelength,highWavelength):
+    # make an empty dataframe for a spectra that has numGridPoints
+    #   from lowWavelength to highWavelength as potential data
+    wavelengths = np.linspace(lowWavelength,highWavelength,numGridPoints)
+    columns = np.append(wavelengths,'label')
+    initializeData = np.zeros((0,numGridPoints+1))
+    df = pandas.DataFrame(initializeData,columns=columns)
+    return df
+
+def fillArtificialSpectra(peakData,toLabel,df):
+    # provide an (2,N) array peakData that stores ideal locations and widths
+    #   use that to make a spectra that resembles that ideal
+    #   and input that into the DataFrame with label toLabel
+    return df
+
+#def GaussMixModelEachRow
+# return df1 with the GMM fit parameters of each row and the label
+
+#def kMeans on df1
+# ignore the label and do a kMeans cluster
+# see if we get the same clustering as the original labels
