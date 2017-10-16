@@ -1,20 +1,76 @@
 import pandas
 import numpy as np
+import matplotlib.pyplot as plt
 
-def makeArtificialDF(numGridPoints,lowWavelength,highWavelength):
+spectraDF=0
+GMMFitDF=0
+
+samplePeakData=[[10,450,20],[10,600,20]]
+
+def makeArtificialDF(numGridPoints=10,lowWavelength=400,highWavelength=700):
     # make an empty dataframe for a spectra that has numGridPoints
     #   from lowWavelength to highWavelength as potential data
     wavelengths = np.linspace(lowWavelength,highWavelength,numGridPoints)
     columns = np.append(wavelengths,'label')
     initializeData = np.zeros((0,numGridPoints+1))
     df = pandas.DataFrame(initializeData,columns=columns)
+    global spectraDF
+    spectraDF=df
     return df
 
-def fillArtificialSpectra(peakData,toLabel,df):
-    # provide an (2,N) array peakData that stores ideal locations and widths
+def gauss(x, *p):
+    # Define model function to be used to make artificial spectra
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+def getWaveLengthsUsed(df=spectraDF):
+    # reading from the column names of spectraDF
+    # see which wavelengths are used as data points
+    waveLengthsUsed = []
+    for col in df.columns.values:
+        try:
+            float(col)
+            waveLengthsUsed.append(float(col))
+        except ValueError:
+            pass
+    return waveLengthsUsed
+
+def fillArtificialSpectra(peakData=samplePeakData,toLabel='none',df=spectraDF):
+    # provide an (3,N) array peakData that stores ideal amplitudes,locations and widths
     #   use that to make a spectra that resembles that ideal
     #   and input that into the DataFrame with label toLabel
+    waveLengthsUsed=getWaveLengthsUsed(df)
+    simulatedSpectra=0*np.array(waveLengthsUsed)
+    for p in peakData:
+        toAdd=list(map(lambda x: gauss(x,*p),waveLengthsUsed))
+        simulatedSpectra+=np.array(toAdd)
+        #print(simulatedSpectra)
+    #plt.plot(waveLengthsUsed,simulatedSpectra)
+    newRow=np.append(simulatedSpectra,toLabel)
+    df.loc[len(df)] = newRow
+    global spectraDF
+    spectraDF=df
     return df
+
+def getColumnNames(numPeaks):
+    # return an array of form peakAmp1,peakLoc1,peakWidth1,peakAmp2
+    #   etc all the way to numPeaks
+    peakAmp=lambda x: 'peakAmp'+str(x)
+    peakLoc=lambda x: 'peakLoc'+str(x)
+    peakWidth=lambda x: 'peakWidth'+str(x)
+    columnNames=list(map(lambda x: [peakAmp(x),peakLoc(x),peakWidth(x)],np.arange(1,numPeaks+1)))
+    columnNames=sum(columnNames,[])
+    return np.append(columnNames,'label')
+
+def makeEmptyFitDF(numPeaks):
+    # makes an empty DF for the GMM fit data to go into
+    # as well as the column for the label
+    columnNames=getColumnNames(numPeaks)
+    initializeData = np.zeros((0,3*numPeaks+1))
+    df1 = pandas.DataFrame(initializeData,columns=columnNames)
+    global GMMFitDF
+    GMMFitDF=df1
+    return df1
 
 #def GaussMixModelEachRow
 # return df1 with the GMM fit parameters of each row and the label
