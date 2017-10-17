@@ -1,6 +1,7 @@
 import pandas
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 spectraDF=0
 GMMFitDF=0
@@ -22,6 +23,29 @@ def gauss(x, *p):
     # Define model function to be used to make artificial spectra
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+
+def sumOfGaussians(x,ps):
+    # sum of gaussians
+    result=0
+    for p in ps:
+        result+=gauss(x,*p)
+    return result
+
+def sumOfThreeGaussians(x,p11,p12,p13,p21,p22,p23,p31,p32,p33):
+    return sumOfGaussians(x,[[p11,p12,p13],[p21,p22,p23],[p31,p32,p33]])
+
+def testSumOfGaussians():
+# Test for sumOfGaussians
+    allX=np.linspace(-10,10,100)
+    ps=[[10,-3,1],[10,4,1],[10,7,1]]
+    allY=list(map(lambda x: sumOfGaussians(x,ps),allX))
+    y_noise = 0.5 * np.random.normal(size=len(allY))
+    allY=allY+y_noise
+    coeff, var_matrix = curve_fit(sumOfThreeGaussians, allX, allY,p0=sum(ps,[]))
+    allY2=list(map(lambda x:sumOfThreeGaussians(x,coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5],coeff[6],coeff[7],coeff[8]),allX))
+    plt.plot(allX,allY)
+    plt.plot(allX,allY2)
+    return coeff
 
 def getWaveLengthsUsed(df=spectraDF):
     # reading from the column names of spectraDF
@@ -74,6 +98,7 @@ def makeEmptyFitDF(numPeaks):
 
 #def GaussMixModelEachRow
 # return df1 with the GMM fit parameters of each row and the label
+    
 
 #def kMeans on df1
 # ignore the label and do a kMeans cluster
